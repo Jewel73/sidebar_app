@@ -70,6 +70,22 @@
 	display: flex;
 	align-items: center;
 	position: relative;
+	border-radius: var(--border-radius);
+	margin-bottom: 2px;
+	transition: all 0.2s ease;
+}
+
+/* Hover state for the entire wrapper */
+.workspace-menu-item-wrapper:hover {
+	background-color: var(--sidebar-select-color);
+}
+
+.workspace-menu-item-wrapper:hover .workspace-menu-link {
+	background-color: transparent;
+}
+
+.workspace-menu-item-wrapper:hover .workspace-menu-toggle {
+	background-color: transparent;
 }
 
 /* Main menu link - following standard-sidebar-item styling */
@@ -79,7 +95,6 @@
 	font-size: var(--text-base);
 	font-weight: var(--weight-regular);
 	padding: 3px 0px 3px 8px;
-	margin-bottom: 2px;
 	border-radius: var(--border-radius);
 	overflow: hidden;
 	cursor: pointer;
@@ -91,25 +106,20 @@
 	/* Truncated text handling - following sidebar-item-label pattern */
 	min-width: 0;
 	
-	&:focus-within {
-		background-color: var(--sidebar-select-color);
-		outline: 0;
-		text-decoration: none;
-	}
+}
 
-	&:hover {
-		background-color: var(--sidebar-select-color);
-		text-decoration: none;
-		color: var(--text-color);
-	}
+.workspace-menu-link:focus-within {
+	background-color: var(--sidebar-select-color);
+	outline: 0;
+	text-decoration: none;
+}
 
-	&.selected {
-		background-color: var(--sidebar-select-color);
-	}
-	
-	&:focus-visible {
-		text-decoration: underline;
-	}
+.workspace-menu-link.selected {
+	background-color: var(--sidebar-select-color);
+}
+
+.workspace-menu-link:focus-visible {
+	text-decoration: underline;
 }
 
 /* Icon styling - following standard pattern */
@@ -144,11 +154,6 @@
 	color: var(--text-muted);
 	transition: all 0.2s ease;
 	flex-shrink: 0;
-}
-
-.workspace-menu-toggle:hover {
-	background-color: var(--sidebar-select-color);
-	color: var(--text-color);
 }
 
 /* Children containers - following Frappe desktop sidebar nesting pattern */
