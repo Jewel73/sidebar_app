@@ -8,52 +8,81 @@ frappe.provide("sidebar_app");
 sidebar_app.WorkspaceMenuInjector = class {
 	constructor() {
 		this.workspace_items = null;
-		this.injected_sidebars = new Set(); // Track which sidebars already have the menu
 		this.init();
 	}
 
 	init() {
-		// Load workspace items immediately
+		console.log("WorkspaceMenuInjector initializing...");
+		
+		// Setup event listeners IMMEDIATELY (before loading items)
+		// This ensures the override happens before any ListView is created
+		this.setup_event_listeners();
+		
+		// Load workspace items in parallel
 		this.load_workspace_items().then(() => {
 			console.log("Workspace items loaded:", this.workspace_items?.length || 0, "items");
 		});
+	}
 
-		// Listen for List View events
-		frappe.listview_settings = frappe.listview_settings || {};
-
-		// Override onload for all list views
-		const original_onload = frappe.listview_settings.onload;
-		frappe.listview_settings.onload = (list_view) => {
-			console.log("List view onload fired");
-			this.inject_into_list_sidebar();
-			if (original_onload) {
-				original_onload.call(this, list_view);
-			}
-		};
-
-		// Listen for sidebar setup events
-		$(document).on("list_sidebar_setup", () => {
-			console.log("list_sidebar_setup event fired");
-			this.inject_into_list_sidebar();
-		});
+	setup_event_listeners() {
+		// Store reference to this for use in overrides
+		const self = this;
+		
+		console.log("Setting up event listeners...");
+		console.log("frappe.views.BaseList available:", !!frappe.views.BaseList);
+		
+		// Override BaseList.prototype.setup_side_bar to inject menu right after sidebar is created
+		const OriginalBaseList = frappe.views.BaseList;
+		if (OriginalBaseList && OriginalBaseList.prototype) {
+			console.log("Overriding BaseList.prototype.setup_side_bar");
+			const original_setup_side_bar = OriginalBaseList.prototype.setup_side_bar;
+			OriginalBaseList.prototype.setup_side_bar = function() {
+				console.log("BaseList.setup_side_bar called");
+				
+				// Call original setup_side_bar first
+				const result = original_setup_side_bar.call(this);
+				
+				// Inject menu right after sidebar is set up
+				// Use setTimeout to ensure DOM is fully ready
+				setTimeout(() => {
+					console.log("Sidebar setup completed - injecting menu");
+					self.inject_into_list_sidebar();
+				}, 100);
+				
+				return result;
+			};
+			
+			// Also override refresh to handle subsequent refreshes
+			const original_refresh = OriginalBaseList.prototype.refresh;
+			OriginalBaseList.prototype.refresh = function() {
+				console.log("BaseList.refresh called");
+				const promise = original_refresh.call(this);
+				
+				// After refresh completes, trigger our event
+				if (promise && promise.then) {
+					promise.then(() => {
+						// Use setTimeout to ensure after_render has completed
+						setTimeout(() => {
+							console.log("List view refresh completed - injecting menu");
+							self.inject_into_list_sidebar();
+						}, 100);
+					});
+				}
+				
+				return promise;
+			};
+		} else {
+			console.error("Could not find frappe.views.BaseList");
+		}
 
 		// Listen to form-refresh event (fired after sidebar is created)
 		$(document).on("form-refresh", (e, frm) => {
 			console.log("form-refresh event fired");
 			this.inject_into_form_sidebar(frm);
 		});
-
-		// Use MutationObserver to detect when sidebars are added to DOM
-		this.observe_sidebar_changes();
 	}
 
-	observe_sidebar_changes() {
-		// MutationObserver is disabled because we rely on events:
-		// - list_sidebar_setup for List View
-		// - form_refresh for Form View
-		// This prevents duplicate injections
-		console.log("MutationObserver disabled, using event-based injection");
-	}
+
 
 	load_workspace_items() {
 		if (this.workspace_items) {
@@ -73,54 +102,64 @@ sidebar_app.WorkspaceMenuInjector = class {
 	}
 
 	inject_into_list_sidebar() {
-		const $sidebar = $(".list-sidebar");
+		// Find only the visible/active list sidebar
+		let $sidebar = $(".list-sidebar:visible");
+		
+		// Fallback to any list sidebar if none visible
+		if (!$sidebar.length) {
+			$sidebar = $(".list-sidebar").last(); // Get the most recent one
+		}
+		
+		console.log("inject_into_list_sidebar: Sidebar found:", $sidebar.length);
+		
 		if (!$sidebar.length) {
 			console.log("List sidebar not found");
 			return;
 		}
 
-		// Generate unique ID for this sidebar
-		const sidebar_id = "list-sidebar";
-
-		// Check if already injected using Set
-		if (this.injected_sidebars.has(sidebar_id)) {
-			console.log("List sidebar already tracked as injected");
-			return;
-		}
-
-		// Double check in DOM
-		if ($sidebar.find(".workspace-menu-section").length) {
+		// Check if menu is already in DOM (most reliable check)
+		const existing_menu = $sidebar.find(".workspace-menu-section");
+		console.log("inject_into_list_sidebar: Existing menu count:", existing_menu.length);
+		
+		if (existing_menu.length) {
 			console.log("List sidebar already has menu in DOM");
-			this.injected_sidebars.add(sidebar_id);
+			// Verify it's visible
+			const is_visible = existing_menu.is(":visible");
+			console.log("Menu visibility:", is_visible);
+			if (!is_visible) {
+				console.log("Menu exists but is hidden - forcing visibility");
+				existing_menu.show().css('display', 'block');
+				const $parent = existing_menu.closest(".sidebar-menu");
+				$parent.removeClass('hide').show();
+				const $workspace_section = existing_menu.closest(".workspace-menu-section");
+				$workspace_section.show().css('display', 'block');
+				console.log("Visibility forced - checking again:", existing_menu.is(":visible"));
+			}
 			return;
 		}
 
-		// Mark as being processed
-		this.injected_sidebars.add(sidebar_id);
+		console.log("Attempting to inject menu into list sidebar...");
+		console.log("Workspace items available:", this.workspace_items?.length || 0);
 
-		// Ensure workspace items are loaded before rendering
-		this.load_workspace_items().then(() => {
-			if (this.workspace_items && this.workspace_items.length > 0) {
-				// Final check before rendering
+		// Workspace items should already be loaded at this point
+		if (this.workspace_items && this.workspace_items.length > 0) {
+			this.render_menu($sidebar, "list");
+			console.log("Menu injection completed");
+		} else {
+			console.warn("Workspace items not loaded yet, loading and retrying...");
+			// Fallback: if items not loaded, wait and retry
+			this.load_workspace_items().then(() => {
+				console.log("Workspace items loaded, retrying injection");
 				if (!$sidebar.find(".workspace-menu-section").length) {
 					this.render_menu($sidebar, "list");
 				}
-			}
-		});
+			});
+		}
 	}
 
 	inject_into_form_sidebar(frm) {
 		if (!frm || !frm.page) {
 			console.log("Form or page not found");
-			return;
-		}
-
-		// Generate unique ID for this form's sidebar
-		const sidebar_id = `form-sidebar-${frm.doctype}-${frm.docname || 'new'}`;
-
-		// Check if already injected
-		if (this.injected_sidebars.has(sidebar_id)) {
-			console.log("Form sidebar already tracked as injected:", sidebar_id);
 			return;
 		}
 
@@ -131,27 +170,26 @@ sidebar_app.WorkspaceMenuInjector = class {
 			return;
 		}
 
-		// Double check in DOM
+		// Check if menu is already in DOM
 		if ($form_sidebar.find(".workspace-menu-section").length) {
 			console.log("Form sidebar already has menu in DOM");
-			this.injected_sidebars.add(sidebar_id);
 			return;
 		}
 
-		// Mark as being processed
-		this.injected_sidebars.add(sidebar_id);
+		console.log("Found form sidebar, injecting menu...");
 
-		console.log("Found form sidebar, injecting menu...", sidebar_id);
-
-		// Ensure workspace items are loaded before rendering
-		this.load_workspace_items().then(() => {
-			if (this.workspace_items && this.workspace_items.length > 0) {
-				// Final check before rendering
+		// Workspace items should already be loaded at this point
+		if (this.workspace_items && this.workspace_items.length > 0) {
+			this.render_menu($form_sidebar, "form");
+		} else {
+			console.warn("Workspace items not loaded yet for form, loading and retrying...");
+			// Fallback: if items not loaded, wait and retry
+			this.load_workspace_items().then(() => {
 				if (!$form_sidebar.find(".workspace-menu-section").length) {
 					this.render_menu($form_sidebar, "form");
 				}
-			}
-		});
+			});
+		}
 	}
 
 	render_menu($container, context) {
@@ -323,11 +361,12 @@ sidebar_app.WorkspaceMenuInjector = class {
 $(document).ready(() => {
 	// Wait for frappe to be fully loaded
 	if (frappe && frappe.call) {
-		new sidebar_app.WorkspaceMenuInjector();
+		// Store instance globally for access in overridden methods
+		sidebar_app.WorkspaceMenuInjector.instance = new sidebar_app.WorkspaceMenuInjector();
 	} else {
 		// Fallback: wait a bit and try again
 		setTimeout(() => {
-			new sidebar_app.WorkspaceMenuInjector();
+			sidebar_app.WorkspaceMenuInjector.instance = new sidebar_app.WorkspaceMenuInjector();
 		}, 1000);
 	}
 });
