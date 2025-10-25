@@ -1,0 +1,250 @@
+/**
+ * Workspace Menu Injector Styles
+ * Styles for the workspace menu injected into list/form sidebars
+ */
+
+/* Main workspace menu section */
+.workspace-menu-section {
+	border-bottom: 1px solid var(--border-color);
+	margin-bottom: 16px;
+	padding-bottom: 16px;
+}
+
+.workspace-menu-header {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	margin-bottom: 8px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.workspace-menu-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+/* Workspace menu items */
+.workspace-menu-item {
+	position: relative;
+	margin-bottom: 2px;
+}
+
+.workspace-menu-item-wrapper {
+	display: flex;
+	align-items: center;
+	position: relative;
+}
+
+.workspace-menu-link {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	color: var(--text-color);
+	text-decoration: none;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+	flex: 1;
+	min-width: 0; /* Allows text to truncate */
+}
+
+.workspace-menu-link:hover {
+	background-color: var(--bg-light-gray);
+	color: var(--text-color);
+	text-decoration: none;
+}
+
+.workspace-menu-link:focus {
+	outline: 2px solid var(--primary-color);
+	outline-offset: -2px;
+}
+
+.workspace-menu-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin-right: 8px;
+	flex-shrink: 0;
+	color: var(--text-muted);
+}
+
+.workspace-menu-label {
+	font-size: var(--text-sm);
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1;
+}
+
+/* Toggle button for items with children */
+.workspace-menu-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin-left: 4px;
+	border-radius: 4px;
+	cursor: pointer;
+	color: var(--text-muted);
+	transition: all 0.2s ease;
+	flex-shrink: 0;
+}
+
+.workspace-menu-toggle:hover {
+	background-color: var(--control-bg);
+	color: var(--text-color);
+}
+
+/* Children containers */
+.workspace-menu-children {
+	margin-left: 16px;
+	border-left: 1px solid var(--border-color);
+	padding-left: 8px;
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+.workspace-menu-children .workspace-menu-link {
+	padding: 6px 8px;
+	font-size: var(--text-xs);
+}
+
+.workspace-menu-children .workspace-menu-icon {
+	width: 16px;
+	height: 16px;
+	margin-right: 6px;
+}
+
+/* Expanded state */
+.workspace-menu-item.expanded > .workspace-menu-item-wrapper > .workspace-menu-toggle {
+	transform: rotate(180deg);
+}
+
+/* Active/Current page highlighting */
+.workspace-menu-link.active,
+.workspace-menu-link[href*="__current_page__"] {
+	background-color: var(--primary-color);
+	color: white;
+}
+
+.workspace-menu-link.active .workspace-menu-icon,
+.workspace-menu-link[href*="__current_page__"] .workspace-menu-icon {
+	color: white;
+}
+
+/* Special styling for quick links */
+.workspace-menu-item[data-quick-link="true"] {
+	position: relative;
+}
+
+.workspace-menu-item[data-quick-link="true"]::before {
+	content: "";
+	position: absolute;
+	left: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 2px;
+	height: 12px;
+	background: var(--primary-color);
+	border-radius: 1px;
+	opacity: 0.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.workspace-menu-section {
+		margin-bottom: 12px;
+		padding-bottom: 12px;
+	}
+	
+	.workspace-menu-link {
+		padding: 6px 8px;
+	}
+	
+	.workspace-menu-label {
+		font-size: var(--text-xs);
+	}
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+	.workspace-menu-header {
+		color: var(--text-muted);
+	}
+	
+	.workspace-menu-link:hover {
+		background-color: rgba(255, 255, 255, 0.1);
+	}
+	
+	.workspace-menu-children {
+		border-left-color: rgba(255, 255, 255, 0.1);
+	}
+}
+
+/* Animation for smooth transitions */
+.workspace-menu-children {
+	overflow: hidden;
+	transition: all 0.3s ease;
+}
+
+.workspace-menu-item {
+	transition: all 0.2s ease;
+}
+
+/* Scrollable menu if too many items */
+.workspace-menu-list {
+	max-height: 400px;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--scrollbar) transparent;
+}
+
+.workspace-menu-list::-webkit-scrollbar {
+	width: 4px;
+}
+
+.workspace-menu-list::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.workspace-menu-list::-webkit-scrollbar-thumb {
+	background: var(--scrollbar);
+	border-radius: 2px;
+}
+
+.workspace-menu-list::-webkit-scrollbar-thumb:hover {
+	background: var(--scrollbar-hover);
+}
+
+/* Loading state (if needed) */
+.workspace-menu-loading {
+	padding: 16px;
+	text-align: center;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+.workspace-menu-loading::before {
+	content: "";
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--border-color);
+	border-top: 2px solid var(--primary-color);
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin-right: 8px;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
