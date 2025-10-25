@@ -1,5 +1,15 @@
 [
   {
+    "name": "Workspace-display_label",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "display_label",
+    "label": "Display Label",
+    "fieldtype": "Data",
+    "insert_after": "title",
+    "description": "Optional: Custom label to show in menus (if empty, Title will be used)"
+  },
+  {
     "name": "Workspace-is_quick_link",
     "doctype": "Custom Field",
     "dt": "Workspace",

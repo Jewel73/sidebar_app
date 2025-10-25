@@ -111,7 +111,7 @@ frappe.provide("frappe.views");
 							href="${href}"
 							target="${target}"
 							class="item-anchor ${item.is_editable ? "" : "block-click"}"
-							title="${__(item.title)}"
+							title="${__(item.display_label || item.title)}"
 						>
 							<span class="sidebar-item-icon" item-icon="${item.icon || 'link-url'}">
 								${item.public
@@ -119,7 +119,7 @@ frappe.provide("frappe.views");
 									: `<span class="indicator ${item.indicator_color}"></span>`
 								}
 							</span>
-							<span class="sidebar-item-label">${__(item.title)}</span>
+							<span class="sidebar-item-label">${__(item.display_label || item.title)}</span>
 						</a>
 						<div class="sidebar-item-control"></div>
 					</div>
@@ -338,3 +338,422 @@ $(document).on('list_sidebar_setup', function() {
 		}
 	});
 });
+
+// Override edit_page to add Quick Link fields
+frappe.provide("frappe.views.Workspace.prototype");
+
+const original_edit_page = frappe.views.Workspace.prototype.edit_page;
+
+frappe.views.Workspace.prototype.edit_page = function(item) {
+	var me = this;
+	let old_item = item;
+	let parent_pages = this.get_parent_pages(item);
+	let idx = parent_pages.findIndex((x) => x == item.title);
+	if (idx !== -1) parent_pages.splice(idx, 1);
+
+	const d = new frappe.ui.Dialog({
+		title: __("Update Details"),
+		fields: [
+			{
+				label: __("Title"),
+				fieldtype: "Data",
+				fieldname: "title",
+				reqd: 1,
+				default: item.title,
+				description: __("Unique identifier for this workspace item")
+			},
+			{
+				label: __("Display Label"),
+				fieldtype: "Data",
+				fieldname: "display_label",
+				default: item.display_label || "",
+				description: __("Optional: Custom label to show in menus (if empty, Title will be used)")
+			},
+			{
+				label: __("Parent"),
+				fieldtype: "Select",
+				fieldname: "parent",
+				options: parent_pages,
+				default: item.parent_page,
+			},
+			{
+				label: __("Public"),
+				fieldtype: "Check",
+				fieldname: "is_public",
+				depends_on: `eval:${this.has_access}`,
+				default: item.public,
+				onchange: function () {
+					d.set_df_property(
+						"parent",
+						"options",
+						this.get_value() ? me.public_parent_pages : me.private_parent_pages
+					);
+					d.set_df_property("icon", "hidden", this.get_value() ? 0 : 1);
+					d.set_df_property("indicator_color", "hidden", this.get_value() ? 1 : 0);
+				},
+			},
+			{
+				fieldtype: "Column Break",
+			},
+			{
+				label: __("Icon"),
+				fieldtype: "Icon",
+				fieldname: "icon",
+				default: item.public && item.icon,
+				hidden: !item.public,
+			},
+			{
+				label: __("Indicator color"),
+				fieldtype: "Select",
+				fieldname: "indicator_color",
+				options: me.indicator_colors,
+				default: !item.public && item.indicator_color,
+				hidden: item.public,
+			},
+			{
+				fieldtype: "Section Break",
+				label: __("Quick Link Settings"),
+			},
+			{
+				label: __("Is Quick Link"),
+				fieldtype: "Check",
+				fieldname: "is_quick_link",
+				default: item.is_quick_link || 0,
+				onchange: function() {
+					const is_checked = this.get_value();
+					d.set_df_property("quick_link_type", "hidden", !is_checked);
+					d.set_df_property("quick_link_to", "hidden", !is_checked);
+					d.set_df_property("quick_link_workspace", "hidden", !is_checked);
+					d.set_df_property("quick_link_url", "hidden", !is_checked);
+					d.set_df_property("quick_link_open_new_tab", "hidden", !is_checked);
+				}
+			},
+			{
+				label: __("Link Type"),
+				fieldtype: "Select",
+				fieldname: "quick_link_type",
+				options: ["", "DocType", "Page", "Report", "Workspace", "URL"],
+				default: item.quick_link_type || "",
+				hidden: !item.is_quick_link,
+				onchange: function() {
+					const link_type = this.get_value();
+					d.set_df_property("quick_link_to", "hidden", !link_type || link_type === "Workspace" || link_type === "URL");
+					d.set_df_property("quick_link_workspace", "hidden", link_type !== "Workspace");
+					d.set_df_property("quick_link_url", "hidden", link_type !== "URL");
+					d.set_df_property("quick_link_open_new_tab", "hidden", link_type !== "URL");
+
+					// Update field label and options based on type
+					if (link_type === "DocType") {
+						d.set_df_property("quick_link_to", "label", __("DocType"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "DocType");
+					} else if (link_type === "Page") {
+						d.set_df_property("quick_link_to", "label", __("Page"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "Page");
+					} else if (link_type === "Report") {
+						d.set_df_property("quick_link_to", "label", __("Report"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "Report");
+					}
+				}
+			},
+			{
+				fieldtype: "Column Break",
+			},
+			{
+				label: __("Link To"),
+				fieldtype: "Link",
+				fieldname: "quick_link_to",
+				options: item.quick_link_type || "DocType",
+				default: item.quick_link_to || "",
+				hidden: !item.is_quick_link || !item.quick_link_type || item.quick_link_type === "Workspace" || item.quick_link_type === "URL"
+			},
+			{
+				label: __("Workspace"),
+				fieldtype: "Link",
+				fieldname: "quick_link_workspace",
+				options: "Workspace",
+				default: item.quick_link_workspace || "",
+				hidden: !item.is_quick_link || item.quick_link_type !== "Workspace"
+			},
+			{
+				label: __("URL"),
+				fieldtype: "Data",
+				fieldname: "quick_link_url",
+				default: item.quick_link_url || "",
+				hidden: !item.is_quick_link || item.quick_link_type !== "URL"
+			},
+			{
+				label: __("Open in New Tab"),
+				fieldtype: "Check",
+				fieldname: "quick_link_open_new_tab",
+				default: item.quick_link_open_new_tab || 0,
+				hidden: !item.is_quick_link || item.quick_link_type !== "URL"
+			}
+		],
+		primary_action_label: __("Update"),
+		primary_action: (values) => {
+			values.title = strip_html(values.title);
+			let is_title_changed = values.title != old_item.title;
+			let is_section_changed = Boolean(values.is_public) != Boolean(old_item.public);
+			if (
+				(is_title_changed || is_section_changed) &&
+				!me.validate_page(values, old_item)
+			)
+				return;
+			d.hide();
+
+			frappe.call({
+				method: "sidebar_app.overrides.workspace.update_page",
+				args: {
+					name: old_item.name,
+					title: values.title,
+					display_label: values.display_label || "",
+					icon: values.icon || "",
+					indicator_color: values.indicator_color || "",
+					parent: values.parent || "",
+					public: values.is_public || 0,
+					is_quick_link: values.is_quick_link || 0,
+					quick_link_type: values.quick_link_type || "",
+					quick_link_to: values.quick_link_to || "",
+					quick_link_workspace: values.quick_link_workspace || "",
+					quick_link_url: values.quick_link_url || "",
+					quick_link_open_new_tab: values.quick_link_open_new_tab || 0
+				},
+				callback: function (res) {
+					if (res.message) {
+						let message = __("Workspace {0} Edited Successfully", [
+							old_item.title.bold(),
+						]);
+						frappe.show_alert({ message: message, indicator: "green" });
+					}
+				},
+			});
+
+			// Update local cached values with quick link data
+			old_item.display_label = values.display_label || "";
+			old_item.is_quick_link = values.is_quick_link || 0;
+			old_item.quick_link_type = values.quick_link_type || "";
+			old_item.quick_link_to = values.quick_link_to || "";
+			old_item.quick_link_workspace = values.quick_link_workspace || "";
+			old_item.quick_link_url = values.quick_link_url || "";
+			old_item.quick_link_open_new_tab = values.quick_link_open_new_tab || 0;
+
+			me.update_sidebar(old_item, values);
+
+			if (me.make_page_selected) {
+				let pre_url = values.is_public ? "" : "private/";
+				let route = pre_url + frappe.router.slug(values.title);
+				frappe.set_route(route);
+
+				me.make_page_selected = false;
+			}
+
+			me.make_sidebar();
+			me.show_sidebar_actions();
+		},
+	});
+	d.show();
+};
+
+// Override duplicate_page to add Quick Link fields
+frappe.views.Workspace.prototype.duplicate_page = function(page) {
+	var me = this;
+	let new_page = { ...page };
+	if (!this.has_access && new_page.public) {
+		new_page.public = 0;
+	}
+	let parent_pages = this.get_parent_pages({ public: new_page.public });
+	const d = new frappe.ui.Dialog({
+		title: __("Create Duplicate"),
+		fields: [
+			{
+				label: __("Title"),
+				fieldtype: "Data",
+				fieldname: "title",
+				reqd: 1,
+				description: __("Unique identifier for this workspace item")
+			},
+			{
+				label: __("Display Label"),
+				fieldtype: "Data",
+				fieldname: "display_label",
+				default: page.display_label || "",
+				description: __("Optional: Custom label to show in menus (if empty, Title will be used)")
+			},
+			{
+				label: __("Parent"),
+				fieldtype: "Select",
+				fieldname: "parent",
+				options: parent_pages,
+				default: new_page.parent_page,
+			},
+			{
+				label: __("Public"),
+				fieldtype: "Check",
+				fieldname: "is_public",
+				depends_on: `eval:${this.has_access}`,
+				default: new_page.public,
+				onchange: function () {
+					d.set_df_property(
+						"parent",
+						"options",
+						this.get_value() ? me.public_parent_pages : me.private_parent_pages
+					);
+					d.set_df_property("icon", "hidden", this.get_value() ? 0 : 1);
+					d.set_df_property("indicator_color", "hidden", this.get_value() ? 1 : 0);
+				},
+			},
+			{
+				fieldtype: "Column Break",
+			},
+			{
+				label: __("Icon"),
+				fieldtype: "Icon",
+				fieldname: "icon",
+				default: new_page.public && new_page.icon,
+				hidden: !new_page.public,
+			},
+			{
+				label: __("Indicator color"),
+				fieldtype: "Select",
+				fieldname: "indicator_color",
+				options: this.indicator_colors,
+				hidden: new_page.public,
+				default: !new_page.public && new_page.indicator_color,
+			},
+			{
+				fieldtype: "Section Break",
+				label: __("Quick Link Settings"),
+			},
+			{
+				label: __("Is Quick Link"),
+				fieldtype: "Check",
+				fieldname: "is_quick_link",
+				default: page.is_quick_link || 0,
+				onchange: function() {
+					const is_checked = this.get_value();
+					d.set_df_property("quick_link_type", "hidden", !is_checked);
+					d.set_df_property("quick_link_to", "hidden", !is_checked);
+					d.set_df_property("quick_link_workspace", "hidden", !is_checked);
+					d.set_df_property("quick_link_url", "hidden", !is_checked);
+					d.set_df_property("quick_link_open_new_tab", "hidden", !is_checked);
+				}
+			},
+			{
+				label: __("Link Type"),
+				fieldtype: "Select",
+				fieldname: "quick_link_type",
+				options: ["", "DocType", "Page", "Report", "Workspace", "URL"],
+				default: page.quick_link_type || "",
+				hidden: !page.is_quick_link,
+				onchange: function() {
+					const link_type = this.get_value();
+					d.set_df_property("quick_link_to", "hidden", !link_type || link_type === "Workspace" || link_type === "URL");
+					d.set_df_property("quick_link_workspace", "hidden", link_type !== "Workspace");
+					d.set_df_property("quick_link_url", "hidden", link_type !== "URL");
+					d.set_df_property("quick_link_open_new_tab", "hidden", link_type !== "URL");
+
+					// Update field label and options based on type
+					if (link_type === "DocType") {
+						d.set_df_property("quick_link_to", "label", __("DocType"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "DocType");
+					} else if (link_type === "Page") {
+						d.set_df_property("quick_link_to", "label", __("Page"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "Page");
+					} else if (link_type === "Report") {
+						d.set_df_property("quick_link_to", "label", __("Report"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "Report");
+					}
+				}
+			},
+			{
+				fieldtype: "Column Break",
+			},
+			{
+				label: __("Link To"),
+				fieldtype: "Link",
+				fieldname: "quick_link_to",
+				options: page.quick_link_type || "DocType",
+				default: page.quick_link_to || "",
+				hidden: !page.is_quick_link || !page.quick_link_type || page.quick_link_type === "Workspace" || page.quick_link_type === "URL"
+			},
+			{
+				label: __("Workspace"),
+				fieldtype: "Link",
+				fieldname: "quick_link_workspace",
+				options: "Workspace",
+				default: page.quick_link_workspace || "",
+				hidden: !page.is_quick_link || page.quick_link_type !== "Workspace"
+			},
+			{
+				label: __("URL"),
+				fieldtype: "Data",
+				fieldname: "quick_link_url",
+				default: page.quick_link_url || "",
+				hidden: !page.is_quick_link || page.quick_link_type !== "URL"
+			},
+			{
+				label: __("Open in New Tab"),
+				fieldtype: "Check",
+				fieldname: "quick_link_open_new_tab",
+				default: page.quick_link_open_new_tab || 0,
+				hidden: !page.is_quick_link || page.quick_link_type !== "URL"
+			}
+		],
+		primary_action_label: __("Duplicate"),
+		primary_action: (values) => {
+			if (!me.validate_page(values)) return;
+			d.hide();
+			frappe.call({
+				method: "sidebar_app.overrides.workspace.duplicate_page",
+				args: {
+					page_name: page.name,
+					new_page: values,
+				},
+				callback: function (res) {
+					if (res.message) {
+						let new_page = res.message;
+						let message = __(
+							"Duplicate of {0} named as {1} is created successfully",
+							[page.title.bold(), new_page.title.bold()]
+						);
+						frappe.show_alert({ message: message, indicator: "green" });
+					}
+				},
+			});
+
+			new_page.title = values.title;
+			new_page.display_label = values.display_label || "";
+			new_page.public = values.is_public || 0;
+			new_page.name = values.title + (new_page.public ? "" : "-" + frappe.session.user);
+			new_page.label = new_page.name;
+			new_page.icon = values.icon;
+			new_page.indicator_color = values.indicator_color;
+			new_page.parent_page = values.parent || "";
+			new_page.for_user = new_page.public ? "" : frappe.session.user;
+			new_page.is_editable = !new_page.public;
+			new_page.selected = true;
+			new_page.is_quick_link = values.is_quick_link || 0;
+			new_page.quick_link_type = values.quick_link_type || "";
+			new_page.quick_link_to = values.quick_link_to || "";
+			new_page.quick_link_workspace = values.quick_link_workspace || "";
+			new_page.quick_link_url = values.quick_link_url || "";
+			new_page.quick_link_open_new_tab = values.quick_link_open_new_tab || 0;
+
+			me.update_cached_values(page, new_page, true);
+
+			let pre_url = values.is_public ? "" : "private/";
+			let route = pre_url + frappe.router.slug(values.title);
+			frappe.set_route(route);
+
+			me.make_sidebar();
+			me.show_sidebar_actions();
+		},
+	});
+	d.show();
+};

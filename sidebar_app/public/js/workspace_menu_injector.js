@@ -315,6 +315,7 @@ sidebar_app.WorkspaceMenuInjector = class {
 			const icon = item.icon || "link-url";
 			const url = this.get_item_url(item);
 			const is_current = this.is_current_page(item);
+			const display_text = item.display_label || item.title;
 
 			if (is_current) {
 				console.log(`✓ Found current page: ${item.title}, adding 'selected' class`);
@@ -327,7 +328,7 @@ sidebar_app.WorkspaceMenuInjector = class {
 							<span class="workspace-menu-icon">
 								${frappe.utils.icon(icon, "sm")}
 							</span>
-							<span class="workspace-menu-label">${__(item.title)}</span>
+							<span class="workspace-menu-label">${__(display_text)}</span>
 						</a>
 						${has_children ? `<span class="workspace-menu-toggle">${frappe.utils.icon("es-line-down", "sm")}</span>` : ''}
 					</div>
