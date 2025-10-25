@@ -30,8 +30,7 @@ app_include_css = [
 	"/assets/sidebar_app/css/workspace_menu.css"
 ]
 app_include_js = [
-	"/assets/sidebar_app/js/sidebar_app.js",
-	"/assets/sidebar_app/js/workspace_menu_injector.js"
+	"/assets/sidebar_app/js/sidebar_loader.js"
 ]
 
 # include js, css files in header of web template
