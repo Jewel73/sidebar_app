@@ -134,6 +134,7 @@ frappe.provide("frappe.views");
 	const original_append_item = frappe.views.Workspace.prototype.append_item;
 
 	frappe.views.Workspace.prototype.append_item = function(item, container) {
+		// For quick links, use custom rendering
 		if (item.is_quick_link) {
 			const is_current_page = isCurrentQuickLinkPage(item);
 
@@ -172,7 +173,19 @@ frappe.provide("frappe.views");
 			return;
 		}
 
-		return original_append_item.call(this, item, container);
+		// For normal workspace items, call original but update label after
+		const result = original_append_item.call(this, item, container);
+
+		// Update label to use display_label if available
+		if (item.display_label) {
+			const $item_container = this.sidebar_items[item.public ? "public" : "private"][item.title];
+			if ($item_container) {
+				$item_container.find(".sidebar-item-label").first().text(__(item.display_label));
+				$item_container.find(".item-anchor").first().attr("title", __(item.display_label));
+			}
+		}
+
+		return result;
 	};
 
 	const original_show_page = frappe.views.Workspace.prototype.show_page;
