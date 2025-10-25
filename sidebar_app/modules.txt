@@ -1,1 +1,1 @@
-sidebar app
+sidebar_app

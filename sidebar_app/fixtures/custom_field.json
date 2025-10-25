@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Workspace-is_quick_link",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "is_quick_link",
+    "label": "Is Quick Link",
+    "fieldtype": "Check",
+    "insert_after": "is_hidden",
+    "default": "0",
+    "description": "If checked, clicking this workspace will open the link directly instead of the workspace page"
+  },
+  {
+    "name": "Workspace-quick_link_section",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "quick_link_section",
+    "label": "Quick Link Settings",
+    "fieldtype": "Section Break",
+    "insert_after": "is_quick_link",
+    "depends_on": "eval:doc.is_quick_link == 1",
+    "collapsible": 1
+  },
+  {
+    "name": "Workspace-quick_link_type",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "quick_link_type",
+    "label": "Link Type",
+    "fieldtype": "Select",
+    "insert_after": "quick_link_section",
+    "options": "DocType\nPage\nReport\nWorkspace\nURL",
+    "default": "DocType",
+    "mandatory_depends_on": "eval:doc.is_quick_link == 1"
+  },
+  {
+    "name": "Workspace-quick_link_to",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "quick_link_to",
+    "label": "Link To",
+    "fieldtype": "Dynamic Link",
+    "insert_after": "quick_link_type",
+    "options": "quick_link_type",
+    "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type != 'URL' && doc.quick_link_type != 'Workspace'"
+  },
+  {
+    "name": "Workspace-quick_link_workspace",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "quick_link_workspace",
+    "label": "Workspace",
+    "fieldtype": "Link",
+    "insert_after": "quick_link_to",
+    "options": "Workspace",
+    "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type == 'Workspace'"
+  },
+  {
+    "name": "Workspace-quick_link_url",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "quick_link_url",
+    "label": "URL",
+    "fieldtype": "Data",
+    "insert_after": "quick_link_workspace",
+    "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type == 'URL'",
+    "description": "Full URL (e.g., https://example.com)"
+  },
+  {
+    "name": "Workspace-quick_link_open_new_tab",
+    "doctype": "Custom Field",
+    "dt": "Workspace",
+    "fieldname": "quick_link_open_new_tab",
+    "label": "Open in New Tab",
+    "fieldtype": "Check",
+    "insert_after": "quick_link_url",
+    "default": "0",
+    "depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type == 'URL'"
+  }
+]
