@@ -53,11 +53,17 @@
 /* Workspace menu items - following standard-sidebar-item pattern */
 .workspace-menu-item {
 	position: relative;
+	margin-left: -10px;
 }
 
 /* Parent items with children - tighter spacing */
 .workspace-menu-item.has-children {
 	margin-bottom: 0;
+}
+
+/* Nested items styling - following desktop sidebar pattern */
+.workspace-menu-item .workspace-menu-item {
+	margin-left: 10px;
 }
 
 .workspace-menu-item-wrapper {
@@ -72,7 +78,7 @@
 	align-items: center;
 	font-size: var(--text-base);
 	font-weight: var(--weight-regular);
-	padding: 8px 12px;
+	padding: 3px 0px 3px 8px;
 	margin-bottom: 2px;
 	border-radius: var(--border-radius);
 	overflow: hidden;
@@ -145,27 +151,31 @@
 	color: var(--text-color);
 }
 
-/* Children containers - connected to parent, no gap */
+/* Children containers - following Frappe desktop sidebar nesting pattern */
 .workspace-menu-children {
-	margin-left: 16px;
-	border-left: 1px solid var(--border-color);
-	padding-left: 8px;
+	margin-left: 10px;
 	margin-top: 0;
 	margin-bottom: 0;
 	overflow: hidden;
 	transition: all 0.3s ease;
 }
 
+.workspace-menu-children .workspace-menu-item {
+	position: relative;
+}
+
 .workspace-menu-children .workspace-menu-link {
-	padding: 4px 8px;
-	font-size: var(--text-sm);
+	padding: 3px 0px 3px 8px;
+	font-size: var(--text-base);
+	font-weight: var(--weight-regular);
 	margin-bottom: 1px;
+	justify-content: start;
 }
 
 .workspace-menu-children .workspace-menu-icon {
 	width: 16px;
 	height: 16px;
-	margin-right: 6px;
+	margin-right: var(--margin-sm);
 }
 
 /* Expanded state */
@@ -176,7 +186,6 @@
 /* Active/Current page highlighting - following desktop patterns */
 .workspace-menu-link.active {
 	background-color: var(--sidebar-select-color);
-	font-weight: var(--weight-medium);
 }
 
 /* Special styling for quick links - subtle indicator */
