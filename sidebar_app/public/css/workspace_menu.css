@@ -55,6 +55,11 @@
 	position: relative;
 }
 
+/* Parent items with children - tighter spacing */
+.workspace-menu-item.has-children {
+	margin-bottom: 0;
+}
+
 .workspace-menu-item-wrapper {
 	display: flex;
 	align-items: center;
@@ -140,20 +145,21 @@
 	color: var(--text-color);
 }
 
-/* Children containers */
+/* Children containers - connected to parent, no gap */
 .workspace-menu-children {
 	margin-left: 16px;
 	border-left: 1px solid var(--border-color);
 	padding-left: 8px;
-	margin-top: 4px;
-	margin-bottom: 4px;
+	margin-top: 0;
+	margin-bottom: 0;
 	overflow: hidden;
 	transition: all 0.3s ease;
 }
 
 .workspace-menu-children .workspace-menu-link {
-	padding: 6px 8px;
+	padding: 4px 8px;
 	font-size: var(--text-sm);
+	margin-bottom: 1px;
 }
 
 .workspace-menu-children .workspace-menu-icon {
@@ -197,6 +203,15 @@
 	/* Ensure compatibility with existing sidebar sections */
 	border-bottom: none;
 	padding-bottom: 0;
+	/* Prevent horizontal overflow */
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+/* Ensure all content stays within bounds */
+.workspace-menu-section * {
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 /* Responsive adjustments */
@@ -211,10 +226,11 @@
 	}
 }
 
-/* Scrollable menu if too many items */
+/* Scrollable menu if too many items - prevent horizontal scroll */
 .workspace-menu-list {
 	max-height: 400px;
 	overflow-y: auto;
+	overflow-x: hidden;
 	scrollbar-width: thin;
 	scrollbar-color: var(--scrollbar) transparent;
 }
