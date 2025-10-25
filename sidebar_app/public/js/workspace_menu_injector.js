@@ -332,12 +332,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 	is_current_page(item) {
 		const currentPath = window.location.pathname;
 
-			item: item.title,
-			currentPath: currentPath,
-			is_quick_link: item.is_quick_link,
-			quick_link_type: item.quick_link_type
-		});
-
 		// Check for quick links
 		if (item.is_quick_link) {
 			let result = false;
