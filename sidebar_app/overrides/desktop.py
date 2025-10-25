@@ -18,6 +18,9 @@ def get_workspace_sidebar_items():
 		try:
 			workspace_doc = frappe.get_cached_doc("Workspace", page["name"])
 
+			# Add display label
+			page["display_label"] = workspace_doc.get("display_label") or ""
+
 			# Add quick link custom fields
 			page["is_quick_link"] = workspace_doc.get("is_quick_link") or 0
 			page["quick_link_type"] = workspace_doc.get("quick_link_type")
