@@ -2,28 +2,13 @@
 	position: relative;
 }
 
-.sidebar-item-container.quick-link-item::before {
-	content: "";
-	position: absolute;
-	left: 4px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 3px;
-	height: 18px;
-	background: var(--primary-color);
-	opacity: 0.4;
-	border-radius: 2px;
-	transition: all 0.2s ease;
+/* Remove any visual indicator for selected quick links in workspace sidebar */
+.sidebar-item-container.quick-link-item .standard-sidebar-item.selected {
+	background-color: transparent;
 }
 
-.sidebar-item-container.quick-link-item:hover::before {
-	opacity: 0.7;
-	height: 22px;
-}
-
-.sidebar-item-container.quick-link-item .selected::before {
-	opacity: 1;
-	height: 24px;
+.sidebar-item-container.quick-link-item .standard-sidebar-item.selected::before {
+	display: none;
 }
 
 .show-hidden-workspaces .sidebar-item-container.quick-link-item {

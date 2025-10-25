@@ -14,7 +14,7 @@
 }
 
 /* Header styling - following standard-sidebar-label pattern */
-.workspace-menu-header {
+.workspace-menu-header.standard-sidebar-label {
 	font-size: var(--text-xs);
 	text-transform: uppercase;
 	cursor: pointer;
@@ -22,26 +22,16 @@
 	display: flex;
 	align-items: center;
 	color: var(--text-muted);
-	
-	span {
-		pointer-events: none;
-	}
+	width: 100%;
+	padding: 0;
+	border: none;
+	background: none;
+	text-align: left;
 }
 
-/* Follow sidebar-label pattern */
-.workspace-menu-header.sidebar-label {
-	font-size: var(--text-xs);
-	font-weight: var(--weight-regular);
-	margin-bottom: var(--margin-sm);
-	display: flex;
-	align-items: center;
-	color: var(--text-muted);
-	
-	.icon {
-		margin: 0;
-		margin-right: var(--margin-xs);
-		--icon-stroke: var(--text-muted);
-	}
+.workspace-menu-header .section-title {
+	pointer-events: none;
+	margin-left: 4px;
 }
 
 .workspace-menu-list {

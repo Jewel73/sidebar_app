@@ -219,25 +219,53 @@ sidebar_app.WorkspaceMenuInjector = class {
 		// Create menu HTML
 		const menu_html = this.build_menu_html(root_items, child_items_map);
 
+		// Use the same category label as Frappe workspaces
+		const category_label = __("Public", null, "Workspace Category");
+
 		// Create section
 		const $section = $(`
-			<div class="sidebar-section workspace-menu-section">
-				<div class="sidebar-label workspace-menu-header">
-					<span>${frappe.utils.icon("menu", "sm")}</span>
-					<span style="margin-left: 8px; font-weight: 600;">${__("Quick Access")}</span>
-				</div>
+			<div class="sidebar-section workspace-menu-section standard-sidebar-section" data-title="Public">
+				<button class="btn-reset standard-sidebar-label workspace-menu-header">
+					<span>${frappe.utils.icon("es-line-down", "xs")}</span>
+					<span class="section-title">${category_label}</span>
+				</button>
 				<ul class="list-unstyled workspace-menu-list">
 					${menu_html}
 				</ul>
 			</div>
 		`);
 
-		// Inject at the beginning of the sidebar
+		// Add toggle functionality for the header
+		const $header = $section.find(".workspace-menu-header");
+		$header.attr({
+			"aria-label": __("Toggle Section: {0}", [category_label]),
+			"aria-expanded": "true"
+		});
+
+		$header.on("click", (e) => {
+			const $e = $(e.currentTarget);
+			const href = $e.find("span use").attr("href");
+			const isCollapsed = href === "#es-line-down";
+			const icon = isCollapsed ? "#es-line-right-chevron" : "#es-line-down";
+
+			$e.find("span use").attr("href", icon);
+			$section.find(".workspace-menu-list").toggleClass("hidden");
+			$e.attr("aria-expanded", String(!isCollapsed));
+		});
+
+		// Inject at the beginning of the sidebar (after image if exists)
 		if (context === "list") {
 			const $target = $container.find(".sidebar-menu").first();
 			console.log("Injecting into list sidebar, target found:", $target.length);
 			if ($target.length) {
-				$section.prependTo($target);
+				// Check if there's an image section before the menu
+				const $imageSection = $target.siblings('.sidebar-image-section, .sidebar-image-wrapper');
+				if ($imageSection.length) {
+					console.log("Image section found, inserting after image");
+					$section.insertAfter($imageSection.last());
+				} else {
+					$section.prependTo($target);
+				}
 				// Remove 'hide' class from the parent ul to make it visible
 				$target.removeClass('hide');
 				console.log("Menu injected successfully! Removed 'hide' class.");
@@ -245,16 +273,26 @@ sidebar_app.WorkspaceMenuInjector = class {
 				console.warn("Target .sidebar-menu not found!");
 			}
 		} else if (context === "form") {
-			// For form sidebar, inject before the first .sidebar-menu
-			const $target = $container.find(".sidebar-menu").first();
-			console.log("Injecting into form sidebar, target found:", $target.length);
-			if ($target.length) {
-				$section.insertBefore($target);
-				console.log("Menu injected successfully into form!");
+			// For form sidebar, inject after image or at beginning
+			// Look for image section in the container itself
+			const $imageSection = $container.find('.sidebar-image-section').first();
+
+			console.log("Injecting into form sidebar");
+			console.log("Container:", $container);
+			console.log("Image section found:", $imageSection.length);
+
+			if ($imageSection.length) {
+				// Insert after image section
+				$section.insertAfter($imageSection);
+				console.log("Menu injected after image in form sidebar!");
 			} else {
-				// Fallback: prepend to container
-				console.log("No .sidebar-menu found, prepending to container");
+				// No image, check if there are any direct children
+				const $firstChild = $container.children().first();
+				console.log("First child:", $firstChild.attr('class'));
+
+				// Insert at the very beginning of form-sidebar
 				$section.prependTo($container);
+				console.log("Menu injected at beginning of form sidebar!");
 			}
 		} else {
 			console.log("Injecting into generic sidebar");
@@ -264,6 +302,9 @@ sidebar_app.WorkspaceMenuInjector = class {
 
 		// Add click handlers
 		this.attach_click_handlers($section);
+
+		// Auto-expand parent if child is selected
+		this.expand_selected_parents($section);
 	}
 
 	build_menu_html(items, child_items_map, level = 0) {
@@ -273,10 +314,15 @@ sidebar_app.WorkspaceMenuInjector = class {
 			const has_children = child_items_map[item.title] && child_items_map[item.title].length > 0;
 			const icon = item.icon || "link-url";
 			const url = this.get_item_url(item);
+			const is_current = this.is_current_page(item);
+
+			if (is_current) {
+				console.log(`✓ Found current page: ${item.title}, adding 'selected' class`);
+			}
 
 			html += `
 				<li class="workspace-menu-item ${has_children ? 'has-children' : ''}" data-item-title="${item.title}">
-					<div class="workspace-menu-item-wrapper">
+					<div class="workspace-menu-item-wrapper ${is_current ? 'selected' : ''}">
 						<a href="${url}" class="workspace-menu-link">
 							<span class="workspace-menu-icon">
 								${frappe.utils.icon(icon, "sm")}
@@ -322,6 +368,55 @@ sidebar_app.WorkspaceMenuInjector = class {
 		return `/app/${frappe.router.slug(item.title)}`;
 	}
 
+	is_current_page(item) {
+		const currentPath = window.location.pathname;
+
+		console.log("Checking if current page:", {
+			item: item.title,
+			currentPath: currentPath,
+			is_quick_link: item.is_quick_link,
+			quick_link_type: item.quick_link_type
+		});
+
+		// Check for quick links
+		if (item.is_quick_link) {
+			let result = false;
+			switch (item.quick_link_type) {
+				case "DocType":
+					result = currentPath.includes(`/app/${frappe.router.slug(item.quick_link_to)}`);
+					console.log(`DocType check: ${item.quick_link_to} -> ${result}`);
+					return result;
+				case "Page":
+					result = currentPath === `/app/${frappe.router.slug(item.quick_link_to)}`;
+					console.log(`Page check: ${item.quick_link_to} -> ${result}`);
+					return result;
+				case "Report":
+					result = currentPath.includes(`/app/query-report/${frappe.router.slug(item.quick_link_to)}`) ||
+						currentPath.includes(`/Report/${item.quick_link_to}`);
+					console.log(`Report check: ${item.quick_link_to} -> ${result}`);
+					return result;
+				case "Workspace":
+					if (item.quick_link_workspace) {
+						result = currentPath.includes(frappe.router.slug(item.quick_link_workspace));
+						console.log(`Workspace check: ${item.quick_link_workspace} -> ${result}`);
+						return result;
+					}
+					return false;
+				case "URL":
+					return false;
+				default:
+					return false;
+			}
+		}
+
+		// Check for regular workspace
+		const workspace_slug = frappe.router.slug(item.title);
+		const result = currentPath === `/app/${workspace_slug}` ||
+		               currentPath === `/app/private/${workspace_slug}`;
+		console.log(`Regular workspace check: ${item.title} (${workspace_slug}) -> ${result}`);
+		return result;
+	}
+
 	attach_click_handlers($section) {
 		// Handle toggle for items with children (click on the toggle icon only)
 		$section.find(".workspace-menu-toggle").on("click", function(e) {
@@ -351,6 +446,37 @@ sidebar_app.WorkspaceMenuInjector = class {
 			if (href && href.startsWith("http")) {
 				e.preventDefault();
 				window.open(href, "_blank");
+			}
+		});
+	}
+
+	expand_selected_parents($section) {
+		// Find all selected items
+		const $selected = $section.find(".workspace-menu-item-wrapper.selected");
+
+		$selected.each((index, element) => {
+			const $selectedWrapper = $(element);
+			const $selectedItem = $selectedWrapper.closest(".workspace-menu-item");
+
+			// Check if this item is inside a .workspace-menu-children container
+			const $childrenContainer = $selectedItem.closest(".workspace-menu-children");
+
+			if ($childrenContainer.length) {
+				const parent_title = $childrenContainer.attr("data-parent");
+				console.log(`Auto-expanding parent: ${parent_title} because child is selected`);
+
+				// Find the parent item
+				const $parentItem = $section.find(`.workspace-menu-item[data-item-title="${parent_title}"]`);
+
+				// Show children
+				$childrenContainer.show();
+
+				// Mark parent as expanded
+				$parentItem.addClass("expanded");
+
+				// Update toggle icon to "up"
+				const $toggle = $parentItem.find(".workspace-menu-toggle");
+				$toggle.find("use").attr("href", "#es-line-up");
 			}
 		});
 	}
