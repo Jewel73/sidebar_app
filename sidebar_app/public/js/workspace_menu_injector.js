@@ -273,12 +273,11 @@ sidebar_app.WorkspaceMenuInjector = class {
 			const has_children = child_items_map[item.title] && child_items_map[item.title].length > 0;
 			const icon = item.icon || "link-url";
 			const url = this.get_item_url(item);
-			const indent_style = level > 0 ? `style="padding-left: ${level * 16 + 8}px;"` : "";
 
 			html += `
 				<li class="workspace-menu-item ${has_children ? 'has-children' : ''}" data-item-title="${item.title}">
 					<div class="workspace-menu-item-wrapper">
-						<a href="${url}" class="workspace-menu-link" ${indent_style}>
+						<a href="${url}" class="workspace-menu-link">
 							<span class="workspace-menu-icon">
 								${frappe.utils.icon(icon, "sm")}
 							</span>

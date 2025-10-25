@@ -53,7 +53,6 @@
 /* Workspace menu items - following standard-sidebar-item pattern */
 .workspace-menu-item {
 	position: relative;
-	margin-left: -10px;
 }
 
 /* Parent items with children - tighter spacing */
@@ -63,29 +62,37 @@
 
 /* Nested items styling - following desktop sidebar pattern */
 .workspace-menu-item .workspace-menu-item {
-	margin-left: 10px;
+	margin-left: 0px;
 }
 
 .workspace-menu-item-wrapper {
 	display: flex;
 	align-items: center;
 	position: relative;
-	border-radius: var(--border-radius);
+	padding: 3px 0px 3px 8px;
 	margin-bottom: 2px;
-	transition: all 0.2s ease;
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
 }
 
-/* Hover state for the entire wrapper */
+/* Hover state */
 .workspace-menu-item-wrapper:hover {
 	background-color: var(--sidebar-select-color);
+	text-decoration: none;
 }
 
-.workspace-menu-item-wrapper:hover .workspace-menu-link {
-	background-color: transparent;
+/* Focus state */
+.workspace-menu-item-wrapper:focus-within {
+	background-color: var(--sidebar-select-color);
+	outline: 0;
+	text-decoration: none;
 }
 
-.workspace-menu-item-wrapper:hover .workspace-menu-toggle {
-	background-color: transparent;
+/* Selected/Active state */
+.workspace-menu-item-wrapper.selected {
+	background-color: var(--sidebar-select-color);
 }
 
 /* Main menu link - following standard-sidebar-item styling */
@@ -94,28 +101,15 @@
 	align-items: center;
 	font-size: var(--text-base);
 	font-weight: var(--weight-regular);
-	padding: 3px 0px 3px 8px;
-	border-radius: var(--border-radius);
-	overflow: hidden;
-	cursor: pointer;
 	color: var(--text-color);
 	text-decoration: none;
 	flex: 1;
-	transition: all 0.2s ease;
-	
-	/* Truncated text handling - following sidebar-item-label pattern */
 	min-width: 0;
-	
 }
 
-.workspace-menu-link:focus-within {
-	background-color: var(--sidebar-select-color);
-	outline: 0;
+.workspace-menu-link:hover {
 	text-decoration: none;
-}
-
-.workspace-menu-link.selected {
-	background-color: var(--sidebar-select-color);
+	color: var(--text-color);
 }
 
 .workspace-menu-link:focus-visible {
@@ -148,33 +142,34 @@
 	justify-content: center;
 	width: 24px;
 	height: 24px;
-	margin-left: 4px;
-	border-radius: var(--border-radius);
+	margin-right: 4px;
 	cursor: pointer;
 	color: var(--text-muted);
-	transition: all 0.2s ease;
+	transition: transform 0.2s ease;
 	flex-shrink: 0;
 }
 
 /* Children containers - following Frappe desktop sidebar nesting pattern */
 .workspace-menu-children {
-	margin-left: 10px;
+	margin-left: 0px;
+	padding-left: 16px;
 	margin-top: 0;
 	margin-bottom: 0;
 	overflow: hidden;
-	transition: all 0.3s ease;
 }
 
 .workspace-menu-children .workspace-menu-item {
 	position: relative;
 }
 
-.workspace-menu-children .workspace-menu-link {
+.workspace-menu-children .workspace-menu-item-wrapper {
 	padding: 3px 0px 3px 8px;
+	margin-bottom: 1px;
+}
+
+.workspace-menu-children .workspace-menu-link {
 	font-size: var(--text-base);
 	font-weight: var(--weight-regular);
-	margin-bottom: 1px;
-	justify-content: start;
 }
 
 .workspace-menu-children .workspace-menu-icon {
@@ -186,11 +181,6 @@
 /* Expanded state */
 .workspace-menu-item.expanded > .workspace-menu-item-wrapper > .workspace-menu-toggle {
 	transform: rotate(180deg);
-}
-
-/* Active/Current page highlighting - following desktop patterns */
-.workspace-menu-link.active {
-	background-color: var(--sidebar-select-color);
 }
 
 /* Special styling for quick links - subtle indicator */
