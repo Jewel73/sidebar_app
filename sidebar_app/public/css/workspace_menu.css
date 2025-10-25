@@ -217,6 +217,17 @@
 	overflow-x: hidden;
 }
 
+/* Force consistent font-weight in both list and form sidebars */
+.list-sidebar .workspace-menu-link,
+.form-sidebar .workspace-menu-link {
+	font-weight: var(--weight-regular) !important;
+}
+
+.list-sidebar .workspace-menu-label,
+.form-sidebar .workspace-menu-label {
+	font-weight: var(--weight-regular) !important;
+}
+
 /* Ensure all content stays within bounds */
 .workspace-menu-section * {
 	max-width: 100%;
