@@ -88,9 +88,20 @@ frappe.provide("frappe.views");
 		}
 	}
 
+	console.log('[sidebar_app] Registering sidebar_item_container override');
+	console.log('[sidebar_app] frappe.views.Workspace available:', typeof frappe.views.Workspace);
+	console.log('[sidebar_app] Original sidebar_item_container:', typeof frappe.views.Workspace?.prototype?.sidebar_item_container);
+
 	const original_sidebar_item_container = frappe.views.Workspace.prototype.sidebar_item_container;
 
 	frappe.views.Workspace.prototype.sidebar_item_container = function(item) {
+		console.log('[sidebar_app] sidebar_item_container called with item:', {
+			title: item.title,
+			display_label: item.display_label,
+			is_quick_link: item.is_quick_link
+		});
+
+		// Handle quick links with custom rendering
 		if (item.is_quick_link) {
 			const { href, target } = buildQuickLinkUrl(item);
 			const is_current_page = isCurrentQuickLinkPage(item);
@@ -128,7 +139,20 @@ frappe.provide("frappe.views");
 			`);
 		}
 
-		return original_sidebar_item_container.call(this, item);
+		// Call original method first
+		const $container = original_sidebar_item_container.call(this, item);
+
+		// If display_label exists, update the label text
+		if (item.display_label) {
+			console.log('[sidebar_app] Updating label from', item.title, 'to', item.display_label);
+			const $label = $container.find('.sidebar-item-label');
+			console.log('[sidebar_app] Found label element:', $label.length, 'current text:', $label.text());
+			$label.text(__(item.display_label));
+			$container.find('.item-anchor').attr('title', __(item.display_label));
+			console.log('[sidebar_app] Label updated to:', $label.text());
+		}
+
+		return $container;
 	};
 
 	const original_append_item = frappe.views.Workspace.prototype.append_item;
@@ -173,19 +197,8 @@ frappe.provide("frappe.views");
 			return;
 		}
 
-		// For normal workspace items, call original but update label after
-		const result = original_append_item.call(this, item, container);
-
-		// Update label to use display_label if available
-		if (item.display_label) {
-			const $item_container = this.sidebar_items[item.public ? "public" : "private"][item.title];
-			if ($item_container) {
-				$item_container.find(".sidebar-item-label").first().text(__(item.display_label));
-				$item_container.find(".item-anchor").first().attr("title", __(item.display_label));
-			}
-		}
-
-		return result;
+		// For normal workspace items, call original
+		return original_append_item.call(this, item, container);
 	};
 
 	const original_show_page = frappe.views.Workspace.prototype.show_page;

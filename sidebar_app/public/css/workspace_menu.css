@@ -70,6 +70,10 @@
 /* Hover state */
 .workspace-menu-item-wrapper:hover {
 	background-color: var(--sidebar-select-color);
+}
+
+.workspace-menu-item-wrapper:hover .workspace-menu-link,
+.workspace-menu-item-wrapper:hover .workspace-menu-label {
 	text-decoration: none;
 }
 
@@ -97,8 +101,9 @@
 	min-width: 0;
 }
 
-.workspace-menu-link:hover {
-	text-decoration: none;
+.workspace-menu-link:hover,
+.workspace-menu-link:hover .workspace-menu-label {
+	text-decoration: none !important;
 	color: var(--text-color);
 }
 
