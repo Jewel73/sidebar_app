@@ -1,13 +1,9 @@
 frappe.provide("sidebar_app");
 
-console.log('[sidebar_loader] Loading sidebar_app scripts immediately');
-
 // Load sidebar_app.js immediately to ensure workspace overrides are available
 frappe.require([
 	"/assets/sidebar_app/js/sidebar_app.js"
-], () => {
-	console.log('[sidebar_loader] sidebar_app.js loaded');
-});
+]);
 
 sidebar_app.lazy_load = function() {
 	if (sidebar_app._loaded) {

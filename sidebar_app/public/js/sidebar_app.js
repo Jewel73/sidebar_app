@@ -88,18 +88,9 @@ frappe.provide("frappe.views");
 		}
 	}
 
-	console.log('[sidebar_app] Registering sidebar_item_container override');
-	console.log('[sidebar_app] frappe.views.Workspace available:', typeof frappe.views.Workspace);
-	console.log('[sidebar_app] Original sidebar_item_container:', typeof frappe.views.Workspace?.prototype?.sidebar_item_container);
-
 	const original_sidebar_item_container = frappe.views.Workspace.prototype.sidebar_item_container;
 
 	frappe.views.Workspace.prototype.sidebar_item_container = function(item) {
-		console.log('[sidebar_app] sidebar_item_container called with item:', {
-			title: item.title,
-			display_label: item.display_label,
-			is_quick_link: item.is_quick_link
-		});
 
 		// Handle quick links with custom rendering
 		if (item.is_quick_link) {
@@ -144,12 +135,9 @@ frappe.provide("frappe.views");
 
 		// If display_label exists, update the label text
 		if (item.display_label) {
-			console.log('[sidebar_app] Updating label from', item.title, 'to', item.display_label);
 			const $label = $container.find('.sidebar-item-label');
-			console.log('[sidebar_app] Found label element:', $label.length, 'current text:', $label.text());
 			$label.text(__(item.display_label));
 			$container.find('.item-anchor').attr('title', __(item.display_label));
-			console.log('[sidebar_app] Label updated to:', $label.text());
 		}
 
 		return $container;
@@ -268,102 +256,6 @@ frappe.provide("frappe.views");
 	};
 
 })();
-
-$(document).on('list_sidebar_setup', function() {
-	const route = frappe.get_route();
-	if (!route || route[0] !== 'List' || route[1] !== 'ToDo') return;
-
-	const $sidebar = $('.list-sidebar');
-	if (!$sidebar.length) return;
-
-	if ($sidebar.find('.custom-menu').length) return;
-
-	const $toggleButtons = $(`
-		<div class="sidebar-section toggle-section">
-			<div class="toggle-switch">
-				<button class="toggle-option active" data-target="quick-links">Quick Links</button>
-				<button class="toggle-option" data-target="filters">Filters</button>
-			</div>
-		</div>
-	`);
-
-	const $menu = $(`
-		<div class="sidebar-section custom-menu quick-links-section">
-			<div class="app-menu-header">
-				<div class="app-logo">
-					${frappe.utils.icon('menu', 'md')}
-				</div>
-				<div class="app-title">Quick Access</div>
-			</div>
-
-			<div class="app-menu-body">
-				<div class="app-menu-items">
-					<a href="/app/user" class="app-menu-item">
-						<div class="app-icon">
-							${frappe.utils.icon('user', 'md')}
-						</div>
-						<div class="app-label">Users</div>
-					</a>
-					<a href="/app/doctype" class="app-menu-item">
-						<div class="app-icon">
-							${frappe.utils.icon('folder', 'md')}
-						</div>
-						<div class="app-label">DocTypes</div>
-					</a>
-					<a href="/app/todo" class="app-menu-item">
-						<div class="app-icon">
-							${frappe.utils.icon('check', 'md')}
-						</div>
-						<div class="app-label">All ToDos</div>
-					</a>
-					<a href="/app/report" class="app-menu-item">
-						<div class="app-icon">
-							${frappe.utils.icon('small-file', 'md')}
-						</div>
-						<div class="app-label">Reports</div>
-					</a>
-				</div>
-
-				<div class="app-menu-footer">
-					<a href="/app/user-settings" class="app-footer-item">
-						<div class="app-icon">
-							${frappe.utils.icon('setting-gear', 'md')}
-						</div>
-						<div class="app-label">Settings</div>
-					</a>
-				</div>
-			</div>
-		</div>
-	`);
-
-	const $filterSection = $sidebar.find('.filter-section');
-	const $saveFilterSection = $sidebar.find('.save-filter-section');
-
-	if ($filterSection.length) {
-		$toggleButtons.insertBefore($filterSection);
-		$menu.insertBefore($filterSection);
-		$filterSection.hide();
-		$saveFilterSection.hide();
-	}
-
-	$toggleButtons.find('.toggle-option').on('click', function(e) {
-		e.preventDefault();
-		const target = $(this).attr('data-target');
-
-		$toggleButtons.find('.toggle-option').removeClass('active');
-		$(this).addClass('active');
-
-		if (target === 'quick-links') {
-			$menu.css('display', 'flex');
-			$filterSection.css('display', 'none');
-			$saveFilterSection.css('display', 'none');
-		} else {
-			$menu.css('display', 'none');
-			$filterSection.css('display', 'block');
-			$saveFilterSection.css('display', 'block');
-		}
-	});
-});
 
 // Override edit_page to add Quick Link fields
 frappe.provide("frappe.views.Workspace.prototype");

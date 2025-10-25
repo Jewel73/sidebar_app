@@ -12,7 +12,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 	}
 
 	init() {
-		console.log("WorkspaceMenuInjector initializing...");
 		
 		// Setup event listeners IMMEDIATELY (before loading items)
 		// This ensures the override happens before any ListView is created
@@ -20,7 +19,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 		
 		// Load workspace items in parallel
 		this.load_workspace_items().then(() => {
-			console.log("Workspace items loaded:", this.workspace_items?.length || 0, "items");
 		});
 	}
 
@@ -28,16 +26,12 @@ sidebar_app.WorkspaceMenuInjector = class {
 		// Store reference to this for use in overrides
 		const self = this;
 		
-		console.log("Setting up event listeners...");
-		console.log("frappe.views.BaseList available:", !!frappe.views.BaseList);
 		
 		// Override BaseList.prototype.setup_side_bar to inject menu right after sidebar is created
 		const OriginalBaseList = frappe.views.BaseList;
 		if (OriginalBaseList && OriginalBaseList.prototype) {
-			console.log("Overriding BaseList.prototype.setup_side_bar");
 			const original_setup_side_bar = OriginalBaseList.prototype.setup_side_bar;
 			OriginalBaseList.prototype.setup_side_bar = function() {
-				console.log("BaseList.setup_side_bar called");
 				
 				// Call original setup_side_bar first
 				const result = original_setup_side_bar.call(this);
@@ -45,7 +39,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 				// Inject menu right after sidebar is set up
 				// Use setTimeout to ensure DOM is fully ready
 				setTimeout(() => {
-					console.log("Sidebar setup completed - injecting menu");
 					self.inject_into_list_sidebar();
 				}, 100);
 				
@@ -55,7 +48,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 			// Also override refresh to handle subsequent refreshes
 			const original_refresh = OriginalBaseList.prototype.refresh;
 			OriginalBaseList.prototype.refresh = function() {
-				console.log("BaseList.refresh called");
 				const promise = original_refresh.call(this);
 				
 				// After refresh completes, trigger our event
@@ -63,7 +55,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 					promise.then(() => {
 						// Use setTimeout to ensure after_render has completed
 						setTimeout(() => {
-							console.log("List view refresh completed - injecting menu");
 							self.inject_into_list_sidebar();
 						}, 100);
 					});
@@ -77,7 +68,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 
 		// Listen to form-refresh event (fired after sidebar is created)
 		$(document).on("form-refresh", (e, frm) => {
-			console.log("form-refresh event fired");
 			this.inject_into_form_sidebar(frm);
 		});
 	}
@@ -110,46 +100,35 @@ sidebar_app.WorkspaceMenuInjector = class {
 			$sidebar = $(".list-sidebar").last(); // Get the most recent one
 		}
 		
-		console.log("inject_into_list_sidebar: Sidebar found:", $sidebar.length);
 		
 		if (!$sidebar.length) {
-			console.log("List sidebar not found");
 			return;
 		}
 
 		// Check if menu is already in DOM (most reliable check)
 		const existing_menu = $sidebar.find(".workspace-menu-section");
-		console.log("inject_into_list_sidebar: Existing menu count:", existing_menu.length);
 		
 		if (existing_menu.length) {
-			console.log("List sidebar already has menu in DOM");
 			// Verify it's visible
 			const is_visible = existing_menu.is(":visible");
-			console.log("Menu visibility:", is_visible);
 			if (!is_visible) {
-				console.log("Menu exists but is hidden - forcing visibility");
 				existing_menu.show().css('display', 'block');
 				const $parent = existing_menu.closest(".sidebar-menu");
 				$parent.removeClass('hide').show();
 				const $workspace_section = existing_menu.closest(".workspace-menu-section");
 				$workspace_section.show().css('display', 'block');
-				console.log("Visibility forced - checking again:", existing_menu.is(":visible"));
 			}
 			return;
 		}
 
-		console.log("Attempting to inject menu into list sidebar...");
-		console.log("Workspace items available:", this.workspace_items?.length || 0);
 
 		// Workspace items should already be loaded at this point
 		if (this.workspace_items && this.workspace_items.length > 0) {
 			this.render_menu($sidebar, "list");
-			console.log("Menu injection completed");
 		} else {
 			console.warn("Workspace items not loaded yet, loading and retrying...");
 			// Fallback: if items not loaded, wait and retry
 			this.load_workspace_items().then(() => {
-				console.log("Workspace items loaded, retrying injection");
 				if (!$sidebar.find(".workspace-menu-section").length) {
 					this.render_menu($sidebar, "list");
 				}
@@ -159,24 +138,20 @@ sidebar_app.WorkspaceMenuInjector = class {
 
 	inject_into_form_sidebar(frm) {
 		if (!frm || !frm.page) {
-			console.log("Form or page not found");
 			return;
 		}
 
 		// Find the actual .form-sidebar element
 		const $form_sidebar = frm.page.sidebar.find(".form-sidebar");
 		if (!$form_sidebar.length) {
-			console.log("Form sidebar element not found");
 			return;
 		}
 
 		// Check if menu is already in DOM
 		if ($form_sidebar.find(".workspace-menu-section").length) {
-			console.log("Form sidebar already has menu in DOM");
 			return;
 		}
 
-		console.log("Found form sidebar, injecting menu...");
 
 		// Workspace items should already be loaded at this point
 		if (this.workspace_items && this.workspace_items.length > 0) {
@@ -193,8 +168,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 	}
 
 	render_menu($container, context) {
-		console.log("render_menu called, context:", context);
-		console.log("Container:", $container.length, "items:", this.workspace_items?.length || 0);
 
 		if (!this.workspace_items || this.workspace_items.length === 0) {
 			console.warn("No workspace items to render!");
@@ -214,7 +187,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 			}
 		});
 
-		console.log("Root items:", root_items.length);
 
 		// Create menu HTML
 		const menu_html = this.build_menu_html(root_items, child_items_map);
@@ -256,19 +228,16 @@ sidebar_app.WorkspaceMenuInjector = class {
 		// Inject at the beginning of the sidebar (after image if exists)
 		if (context === "list") {
 			const $target = $container.find(".sidebar-menu").first();
-			console.log("Injecting into list sidebar, target found:", $target.length);
 			if ($target.length) {
 				// Check if there's an image section before the menu
 				const $imageSection = $target.siblings('.sidebar-image-section, .sidebar-image-wrapper');
 				if ($imageSection.length) {
-					console.log("Image section found, inserting after image");
 					$section.insertAfter($imageSection.last());
 				} else {
 					$section.prependTo($target);
 				}
 				// Remove 'hide' class from the parent ul to make it visible
 				$target.removeClass('hide');
-				console.log("Menu injected successfully! Removed 'hide' class.");
 			} else {
 				console.warn("Target .sidebar-menu not found!");
 			}
@@ -277,27 +246,19 @@ sidebar_app.WorkspaceMenuInjector = class {
 			// Look for image section in the container itself
 			const $imageSection = $container.find('.sidebar-image-section').first();
 
-			console.log("Injecting into form sidebar");
-			console.log("Container:", $container);
-			console.log("Image section found:", $imageSection.length);
 
 			if ($imageSection.length) {
 				// Insert after image section
 				$section.insertAfter($imageSection);
-				console.log("Menu injected after image in form sidebar!");
 			} else {
 				// No image, check if there are any direct children
 				const $firstChild = $container.children().first();
-				console.log("First child:", $firstChild.attr('class'));
 
 				// Insert at the very beginning of form-sidebar
 				$section.prependTo($container);
-				console.log("Menu injected at beginning of form sidebar!");
 			}
 		} else {
-			console.log("Injecting into generic sidebar");
 			$section.prependTo($container);
-			console.log("Menu injected successfully!");
 		}
 
 		// Add click handlers
@@ -318,7 +279,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 			const display_text = item.display_label || item.title;
 
 			if (is_current) {
-				console.log(`✓ Found current page: ${item.title}, adding 'selected' class`);
 			}
 
 			html += `
@@ -372,7 +332,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 	is_current_page(item) {
 		const currentPath = window.location.pathname;
 
-		console.log("Checking if current page:", {
 			item: item.title,
 			currentPath: currentPath,
 			is_quick_link: item.is_quick_link,
@@ -385,21 +344,17 @@ sidebar_app.WorkspaceMenuInjector = class {
 			switch (item.quick_link_type) {
 				case "DocType":
 					result = currentPath.includes(`/app/${frappe.router.slug(item.quick_link_to)}`);
-					console.log(`DocType check: ${item.quick_link_to} -> ${result}`);
 					return result;
 				case "Page":
 					result = currentPath === `/app/${frappe.router.slug(item.quick_link_to)}`;
-					console.log(`Page check: ${item.quick_link_to} -> ${result}`);
 					return result;
 				case "Report":
 					result = currentPath.includes(`/app/query-report/${frappe.router.slug(item.quick_link_to)}`) ||
 						currentPath.includes(`/Report/${item.quick_link_to}`);
-					console.log(`Report check: ${item.quick_link_to} -> ${result}`);
 					return result;
 				case "Workspace":
 					if (item.quick_link_workspace) {
 						result = currentPath.includes(frappe.router.slug(item.quick_link_workspace));
-						console.log(`Workspace check: ${item.quick_link_workspace} -> ${result}`);
 						return result;
 					}
 					return false;
@@ -414,7 +369,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 		const workspace_slug = frappe.router.slug(item.title);
 		const result = currentPath === `/app/${workspace_slug}` ||
 		               currentPath === `/app/private/${workspace_slug}`;
-		console.log(`Regular workspace check: ${item.title} (${workspace_slug}) -> ${result}`);
 		return result;
 	}
 
@@ -464,7 +418,6 @@ sidebar_app.WorkspaceMenuInjector = class {
 
 			if ($childrenContainer.length) {
 				const parent_title = $childrenContainer.attr("data-parent");
-				console.log(`Auto-expanding parent: ${parent_title} because child is selected`);
 
 				// Find the parent item
 				const $parentItem = $section.find(`.workspace-menu-item[data-item-title="${parent_title}"]`);
@@ -497,4 +450,3 @@ $(document).ready(() => {
 	}
 });
 
-console.log("Sidebar App: Workspace Menu Injector loaded");

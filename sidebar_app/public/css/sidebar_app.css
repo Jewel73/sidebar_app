@@ -16,3 +16,7 @@
 	border-left: 2px solid var(--primary-color);
 	padding-left: 2px;
 }
+
+.layout-side-section {
+	padding-right: 0px;
+}

@@ -38,24 +38,30 @@ def duplicate_page(page_name, new_page):
 	from frappe.desk.doctype.workspace.workspace import duplicate_page as original_duplicate_page
 	import json
 
+	# Parse new_page if it's a string, otherwise it's already a dict from Frappe
 	if isinstance(new_page, str):
-		new_page = json.loads(new_page)
+		new_page_dict = json.loads(new_page)
+	else:
+		new_page_dict = new_page
+	
+	# Convert to JSON string for original Frappe function (it expects JSON string)
+	new_page_json = json.dumps(new_page_dict) if isinstance(new_page_dict, dict) else new_page
 
-	# Call original duplicate method
-	result = original_duplicate_page(page_name, new_page)
+	# Call original duplicate method with JSON string
+	result = original_duplicate_page(page_name, new_page_json)
 
 	# Update quick link fields and display label if present
-	if result and isinstance(new_page, dict):
+	if result and isinstance(new_page_dict, dict):
 		workspace_name = result.get("name")
 		if workspace_name:
 			workspace = frappe.get_doc("Workspace", workspace_name)
-			workspace.display_label = new_page.get("display_label", "")
-			workspace.is_quick_link = int(new_page.get("is_quick_link", 0))
-			workspace.quick_link_type = new_page.get("quick_link_type", "")
-			workspace.quick_link_to = new_page.get("quick_link_to", "")
-			workspace.quick_link_workspace = new_page.get("quick_link_workspace", "")
-			workspace.quick_link_url = new_page.get("quick_link_url", "")
-			workspace.quick_link_open_new_tab = int(new_page.get("quick_link_open_new_tab", 0))
+			workspace.display_label = new_page_dict.get("display_label", "")
+			workspace.is_quick_link = int(new_page_dict.get("is_quick_link", 0))
+			workspace.quick_link_type = new_page_dict.get("quick_link_type", "")
+			workspace.quick_link_to = new_page_dict.get("quick_link_to", "")
+			workspace.quick_link_workspace = new_page_dict.get("quick_link_workspace", "")
+			workspace.quick_link_url = new_page_dict.get("quick_link_url", "")
+			workspace.quick_link_open_new_tab = int(new_page_dict.get("quick_link_open_new_tab", 0))
 
 			workspace.save(ignore_permissions=True)
 
