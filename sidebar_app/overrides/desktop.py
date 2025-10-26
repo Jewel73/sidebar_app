@@ -25,7 +25,6 @@ def get_workspace_sidebar_items():
 			page["is_quick_link"] = workspace_doc.get("is_quick_link") or 0
 			page["quick_link_type"] = workspace_doc.get("quick_link_type")
 			page["quick_link_to"] = workspace_doc.get("quick_link_to")
-			page["quick_link_workspace"] = workspace_doc.get("quick_link_workspace")
 			page["quick_link_url"] = workspace_doc.get("quick_link_url")
 			page["quick_link_open_new_tab"] = workspace_doc.get("quick_link_open_new_tab") or 0
 

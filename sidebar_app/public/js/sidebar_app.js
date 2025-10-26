@@ -34,14 +34,14 @@ frappe.provide("frappe.views");
 				break;
 
 			case "Workspace":
-				if (item.quick_link_workspace) {
-					const workspace = frappe.workspaces?.[frappe.router.slug(item.quick_link_workspace)];
+				if (item.quick_link_to) {
+					const workspace = frappe.workspaces?.[frappe.router.slug(item.quick_link_to)];
 					if (workspace) {
 						href = workspace.public
-							? `/app/${frappe.router.slug(item.quick_link_workspace)}`
-							: `/app/private/${frappe.router.slug(item.quick_link_workspace)}`;
+							? `/app/${frappe.router.slug(item.quick_link_to)}`
+							: `/app/private/${frappe.router.slug(item.quick_link_to)}`;
 					} else {
-						href = `/app/${frappe.router.slug(item.quick_link_workspace)}`;
+						href = `/app/${frappe.router.slug(item.quick_link_to)}`;
 					}
 				}
 				break;
@@ -75,8 +75,8 @@ frappe.provide("frappe.views");
 					currentPath.includes(`/Report/${item.quick_link_to}`);
 
 			case "Workspace":
-				if (item.quick_link_workspace) {
-					return currentPath.includes(frappe.router.slug(item.quick_link_workspace));
+				if (item.quick_link_to) {
+					return currentPath.includes(frappe.router.slug(item.quick_link_to));
 				}
 				return false;
 
@@ -330,33 +330,47 @@ frappe.views.Workspace.prototype.edit_page = function(item) {
 			},
 			{
 				fieldtype: "Section Break",
-				label: __("Quick Link Settings"),
+				label: __("Quick Link Configuration"),
+				description: __("Configure this workspace item as a direct link to another resource")
 			},
 			{
-				label: __("Is Quick Link"),
+				label: __("Enable Quick Link"),
 				fieldtype: "Check",
 				fieldname: "is_quick_link",
 				default: item.is_quick_link || 0,
+				description: __("When enabled, clicking this item will navigate directly to the specified target"),
 				onchange: function() {
 					const is_checked = this.get_value();
 					d.set_df_property("quick_link_type", "hidden", !is_checked);
-					d.set_df_property("quick_link_to", "hidden", !is_checked);
-					d.set_df_property("quick_link_workspace", "hidden", !is_checked);
-					d.set_df_property("quick_link_url", "hidden", !is_checked);
-					d.set_df_property("quick_link_open_new_tab", "hidden", !is_checked);
+
+					if (is_checked) {
+						// When enabling, refresh and show fields based on link type
+						d.get_field("quick_link_type").refresh();
+						const link_type = d.get_value("quick_link_type") || "DocType";
+
+						// Show only the appropriate fields for the current link type
+						d.set_df_property("quick_link_to", "hidden", link_type === "URL");
+						d.set_df_property("quick_link_url", "hidden", link_type !== "URL");
+						d.set_df_property("quick_link_open_new_tab", "hidden", link_type !== "URL");
+					} else {
+						// When disabling, hide all dependent fields
+						d.set_df_property("quick_link_to", "hidden", true);
+						d.set_df_property("quick_link_url", "hidden", true);
+						d.set_df_property("quick_link_open_new_tab", "hidden", true);
+					}
 				}
 			},
 			{
-				label: __("Link Type"),
+				label: __("Target Type"),
 				fieldtype: "Select",
 				fieldname: "quick_link_type",
-				options: ["", "DocType", "Page", "Report", "Workspace", "URL"],
-				default: item.quick_link_type || "",
-				hidden: !item.is_quick_link,
+				options: "DocType\nPage\nReport\nWorkspace\nURL",
+				default: item.quick_link_type || "DocType",
+				description: __("Select the type of resource this link points to"),
 				onchange: function() {
 					const link_type = this.get_value();
-					d.set_df_property("quick_link_to", "hidden", !link_type || link_type === "Workspace" || link_type === "URL");
-					d.set_df_property("quick_link_workspace", "hidden", link_type !== "Workspace");
+					// Show/hide fields based on link type
+					d.set_df_property("quick_link_to", "hidden", !link_type || link_type === "URL");
 					d.set_df_property("quick_link_url", "hidden", link_type !== "URL");
 					d.set_df_property("quick_link_open_new_tab", "hidden", link_type !== "URL");
 
@@ -373,6 +387,10 @@ frappe.views.Workspace.prototype.edit_page = function(item) {
 						d.set_df_property("quick_link_to", "label", __("Report"));
 						d.set_df_property("quick_link_to", "fieldtype", "Link");
 						d.set_df_property("quick_link_to", "options", "Report");
+					} else if (link_type === "Workspace") {
+						d.set_df_property("quick_link_to", "label", __("Workspace"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "Workspace");
 					}
 				}
 			},
@@ -386,14 +404,6 @@ frappe.views.Workspace.prototype.edit_page = function(item) {
 				options: item.quick_link_type || "DocType",
 				default: item.quick_link_to || "",
 				hidden: !item.is_quick_link || !item.quick_link_type || item.quick_link_type === "Workspace" || item.quick_link_type === "URL"
-			},
-			{
-				label: __("Workspace"),
-				fieldtype: "Link",
-				fieldname: "quick_link_workspace",
-				options: "Workspace",
-				default: item.quick_link_workspace || "",
-				hidden: !item.is_quick_link || item.quick_link_type !== "Workspace"
 			},
 			{
 				label: __("URL"),
@@ -435,7 +445,6 @@ frappe.views.Workspace.prototype.edit_page = function(item) {
 					is_quick_link: values.is_quick_link || 0,
 					quick_link_type: values.quick_link_type || "",
 					quick_link_to: values.quick_link_to || "",
-					quick_link_workspace: values.quick_link_workspace || "",
 					quick_link_url: values.quick_link_url || "",
 					quick_link_open_new_tab: values.quick_link_open_new_tab || 0
 				},
@@ -454,7 +463,6 @@ frappe.views.Workspace.prototype.edit_page = function(item) {
 			old_item.is_quick_link = values.is_quick_link || 0;
 			old_item.quick_link_type = values.quick_link_type || "";
 			old_item.quick_link_to = values.quick_link_to || "";
-			old_item.quick_link_workspace = values.quick_link_workspace || "";
 			old_item.quick_link_url = values.quick_link_url || "";
 			old_item.quick_link_open_new_tab = values.quick_link_open_new_tab || 0;
 
@@ -473,6 +481,24 @@ frappe.views.Workspace.prototype.edit_page = function(item) {
 		},
 	});
 	d.show();
+
+	// Initialize field visibility based on current is_quick_link value
+	if (!item.is_quick_link) {
+		// Hide quick link fields if not enabled
+		d.set_df_property("quick_link_type", "hidden", true);
+		d.set_df_property("quick_link_to", "hidden", true);
+		d.set_df_property("quick_link_url", "hidden", true);
+		d.set_df_property("quick_link_open_new_tab", "hidden", true);
+	} else {
+		// Show appropriate fields based on link type
+		const link_type = item.quick_link_type || "DocType";
+		if (link_type === "DocType" || link_type === "Page" || link_type === "Report" || link_type === "Workspace") {
+			d.set_df_property("quick_link_to", "hidden", false);
+		} else if (link_type === "URL") {
+			d.set_df_property("quick_link_url", "hidden", false);
+			d.set_df_property("quick_link_open_new_tab", "hidden", false);
+		}
+	}
 };
 
 // Override duplicate_page to add Quick Link fields
@@ -543,33 +569,47 @@ frappe.views.Workspace.prototype.duplicate_page = function(page) {
 			},
 			{
 				fieldtype: "Section Break",
-				label: __("Quick Link Settings"),
+				label: __("Quick Link Configuration"),
+				description: __("Configure this workspace item as a direct link to another resource")
 			},
 			{
-				label: __("Is Quick Link"),
+				label: __("Enable Quick Link"),
 				fieldtype: "Check",
 				fieldname: "is_quick_link",
 				default: page.is_quick_link || 0,
+				description: __("When enabled, clicking this item will navigate directly to the specified target"),
 				onchange: function() {
 					const is_checked = this.get_value();
 					d.set_df_property("quick_link_type", "hidden", !is_checked);
-					d.set_df_property("quick_link_to", "hidden", !is_checked);
-					d.set_df_property("quick_link_workspace", "hidden", !is_checked);
-					d.set_df_property("quick_link_url", "hidden", !is_checked);
-					d.set_df_property("quick_link_open_new_tab", "hidden", !is_checked);
+
+					if (is_checked) {
+						// When enabling, refresh and show fields based on link type
+						d.get_field("quick_link_type").refresh();
+						const link_type = d.get_value("quick_link_type") || "DocType";
+
+						// Show only the appropriate fields for the current link type
+						d.set_df_property("quick_link_to", "hidden", link_type === "URL");
+						d.set_df_property("quick_link_url", "hidden", link_type !== "URL");
+						d.set_df_property("quick_link_open_new_tab", "hidden", link_type !== "URL");
+					} else {
+						// When disabling, hide all dependent fields
+						d.set_df_property("quick_link_to", "hidden", true);
+						d.set_df_property("quick_link_url", "hidden", true);
+						d.set_df_property("quick_link_open_new_tab", "hidden", true);
+					}
 				}
 			},
 			{
-				label: __("Link Type"),
+				label: __("Target Type"),
 				fieldtype: "Select",
 				fieldname: "quick_link_type",
-				options: ["", "DocType", "Page", "Report", "Workspace", "URL"],
-				default: page.quick_link_type || "",
-				hidden: !page.is_quick_link,
+				options: "DocType\nPage\nReport\nWorkspace\nURL",
+				default: page.quick_link_type || "DocType",
+				description: __("Select the type of resource this link points to"),
 				onchange: function() {
 					const link_type = this.get_value();
-					d.set_df_property("quick_link_to", "hidden", !link_type || link_type === "Workspace" || link_type === "URL");
-					d.set_df_property("quick_link_workspace", "hidden", link_type !== "Workspace");
+					// Show/hide fields based on link type
+					d.set_df_property("quick_link_to", "hidden", !link_type || link_type === "URL");
 					d.set_df_property("quick_link_url", "hidden", link_type !== "URL");
 					d.set_df_property("quick_link_open_new_tab", "hidden", link_type !== "URL");
 
@@ -586,6 +626,10 @@ frappe.views.Workspace.prototype.duplicate_page = function(page) {
 						d.set_df_property("quick_link_to", "label", __("Report"));
 						d.set_df_property("quick_link_to", "fieldtype", "Link");
 						d.set_df_property("quick_link_to", "options", "Report");
+					} else if (link_type === "Workspace") {
+						d.set_df_property("quick_link_to", "label", __("Workspace"));
+						d.set_df_property("quick_link_to", "fieldtype", "Link");
+						d.set_df_property("quick_link_to", "options", "Workspace");
 					}
 				}
 			},
@@ -599,14 +643,6 @@ frappe.views.Workspace.prototype.duplicate_page = function(page) {
 				options: page.quick_link_type || "DocType",
 				default: page.quick_link_to || "",
 				hidden: !page.is_quick_link || !page.quick_link_type || page.quick_link_type === "Workspace" || page.quick_link_type === "URL"
-			},
-			{
-				label: __("Workspace"),
-				fieldtype: "Link",
-				fieldname: "quick_link_workspace",
-				options: "Workspace",
-				default: page.quick_link_workspace || "",
-				hidden: !page.is_quick_link || page.quick_link_type !== "Workspace"
 			},
 			{
 				label: __("URL"),
@@ -659,7 +695,6 @@ frappe.views.Workspace.prototype.duplicate_page = function(page) {
 			new_page.is_quick_link = values.is_quick_link || 0;
 			new_page.quick_link_type = values.quick_link_type || "";
 			new_page.quick_link_to = values.quick_link_to || "";
-			new_page.quick_link_workspace = values.quick_link_workspace || "";
 			new_page.quick_link_url = values.quick_link_url || "";
 			new_page.quick_link_open_new_tab = values.quick_link_open_new_tab || 0;
 
@@ -674,4 +709,25 @@ frappe.views.Workspace.prototype.duplicate_page = function(page) {
 		},
 	});
 	d.show();
+
+	// Initialize field visibility based on current is_quick_link value
+	if (!page.is_quick_link) {
+		// Hide quick link fields if not enabled
+		d.set_df_property("quick_link_type", "hidden", true);
+		d.set_df_property("quick_link_to", "hidden", true);
+		d.set_df_property("quick_link_workspace", "hidden", true);
+		d.set_df_property("quick_link_url", "hidden", true);
+		d.set_df_property("quick_link_open_new_tab", "hidden", true);
+	} else {
+		// Show appropriate fields based on link type
+		const link_type = page.quick_link_type || "DocType";
+		if (link_type === "DocType" || link_type === "Page" || link_type === "Report") {
+			d.set_df_property("quick_link_to", "hidden", false);
+		} else if (link_type === "Workspace") {
+			d.set_df_property("quick_link_workspace", "hidden", false);
+		} else if (link_type === "URL") {
+			d.set_df_property("quick_link_url", "hidden", false);
+			d.set_df_property("quick_link_open_new_tab", "hidden", false);
+		}
+	}
 };

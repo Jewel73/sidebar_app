@@ -5,7 +5,7 @@ from frappe import _
 @frappe.whitelist()
 def update_page(name, title, display_label="", icon="", indicator_color="", parent="", public=0,
                 is_quick_link=0, quick_link_type="", quick_link_to="",
-                quick_link_workspace="", quick_link_url="", quick_link_open_new_tab=0):
+                quick_link_url="", quick_link_open_new_tab=0):
 	"""
 	Extended version of update_page to support Quick Link fields and Display Label
 	"""
@@ -21,7 +21,6 @@ def update_page(name, title, display_label="", icon="", indicator_color="", pare
 	workspace.is_quick_link = int(is_quick_link)
 	workspace.quick_link_type = quick_link_type
 	workspace.quick_link_to = quick_link_to
-	workspace.quick_link_workspace = quick_link_workspace
 	workspace.quick_link_url = quick_link_url
 	workspace.quick_link_open_new_tab = int(quick_link_open_new_tab)
 
@@ -59,7 +58,6 @@ def duplicate_page(page_name, new_page):
 			workspace.is_quick_link = int(new_page_dict.get("is_quick_link", 0))
 			workspace.quick_link_type = new_page_dict.get("quick_link_type", "")
 			workspace.quick_link_to = new_page_dict.get("quick_link_to", "")
-			workspace.quick_link_workspace = new_page_dict.get("quick_link_workspace", "")
 			workspace.quick_link_url = new_page_dict.get("quick_link_url", "")
 			workspace.quick_link_open_new_tab = int(new_page_dict.get("quick_link_open_new_tab", 0))
 

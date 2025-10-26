@@ -52,18 +52,8 @@
     "fieldtype": "Dynamic Link",
     "insert_after": "quick_link_type",
     "options": "quick_link_type",
-    "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type != 'URL' && doc.quick_link_type != 'Workspace'"
-  },
-  {
-    "name": "Workspace-quick_link_workspace",
-    "doctype": "Custom Field",
-    "dt": "Workspace",
-    "fieldname": "quick_link_workspace",
-    "label": "Workspace",
-    "fieldtype": "Link",
-    "insert_after": "quick_link_to",
-    "options": "Workspace",
-    "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type == 'Workspace'"
+    "depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type != 'URL'",
+    "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type != 'URL'"
   },
   {
     "name": "Workspace-quick_link_url",
@@ -72,7 +62,8 @@
     "fieldname": "quick_link_url",
     "label": "URL",
     "fieldtype": "Data",
-    "insert_after": "quick_link_workspace",
+    "insert_after": "quick_link_to",
+    "depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type == 'URL'",
     "mandatory_depends_on": "eval:doc.is_quick_link == 1 && doc.quick_link_type == 'URL'",
     "description": "Full URL (e.g., https://example.com)"
   },
