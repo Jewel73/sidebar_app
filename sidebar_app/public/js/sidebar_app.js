@@ -715,16 +715,13 @@ frappe.views.Workspace.prototype.duplicate_page = function(page) {
 		// Hide quick link fields if not enabled
 		d.set_df_property("quick_link_type", "hidden", true);
 		d.set_df_property("quick_link_to", "hidden", true);
-		d.set_df_property("quick_link_workspace", "hidden", true);
 		d.set_df_property("quick_link_url", "hidden", true);
 		d.set_df_property("quick_link_open_new_tab", "hidden", true);
 	} else {
 		// Show appropriate fields based on link type
 		const link_type = page.quick_link_type || "DocType";
-		if (link_type === "DocType" || link_type === "Page" || link_type === "Report") {
+		if (link_type === "DocType" || link_type === "Page" || link_type === "Report" || link_type === "Workspace") {
 			d.set_df_property("quick_link_to", "hidden", false);
-		} else if (link_type === "Workspace") {
-			d.set_df_property("quick_link_workspace", "hidden", false);
 		} else if (link_type === "URL") {
 			d.set_df_property("quick_link_url", "hidden", false);
 			d.set_df_property("quick_link_open_new_tab", "hidden", false);
