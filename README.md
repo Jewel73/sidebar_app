@@ -12,6 +12,14 @@ Sidebar App improves workspace navigation by injecting public workspace menus di
 - **Quick Links Support**: Extended workspace functionality with quick links to DocTypes, Pages, Reports, and URLs
 - **Seamless Integration**: Works out of the box with Frappe's existing UI components
 
+  
+
+https://github.com/user-attachments/assets/9f4c8a97-8b05-4e0f-8f80-0cfe28e0281a
+
+
+
+
+
 ## Installation
 
 ```bash
