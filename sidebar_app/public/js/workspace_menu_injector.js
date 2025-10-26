@@ -331,25 +331,30 @@ sidebar_app.WorkspaceMenuInjector = class {
 
 	is_current_page(item) {
 		const currentPath = window.location.pathname;
+		const route = frappe.get_route();
 
 		// Check for quick links
 		if (item.is_quick_link) {
-			let result = false;
 			switch (item.quick_link_type) {
 				case "DocType":
-					result = currentPath.includes(`/app/${frappe.router.slug(item.quick_link_to)}`);
-					return result;
+					// Match exact DocType in route (route[0] === "List" or "Form", route[1] === doctype)
+					const doctype_slug = frappe.router.slug(item.quick_link_to);
+					if (route.length >= 2 && (route[0] === "List" || route[0] === "Form")) {
+						return frappe.router.slug(route[1]) === doctype_slug;
+					}
+					// Also check for exact path match for non-list/form views
+					return currentPath === `/app/${doctype_slug}`;
 				case "Page":
-					result = currentPath === `/app/${frappe.router.slug(item.quick_link_to)}`;
-					return result;
+					return currentPath === `/app/${frappe.router.slug(item.quick_link_to)}`;
 				case "Report":
-					result = currentPath.includes(`/app/query-report/${frappe.router.slug(item.quick_link_to)}`) ||
-						currentPath.includes(`/Report/${item.quick_link_to}`);
-					return result;
+					const report_slug = frappe.router.slug(item.quick_link_to);
+					return currentPath === `/app/query-report/${report_slug}` ||
+						currentPath.includes(`/app/query-report/${report_slug}/`);
 				case "Workspace":
 					if (item.quick_link_workspace) {
-						result = currentPath.includes(frappe.router.slug(item.quick_link_workspace));
-						return result;
+						const ws_slug = frappe.router.slug(item.quick_link_workspace);
+						return currentPath === `/app/${ws_slug}` ||
+							currentPath === `/app/private/${ws_slug}`;
 					}
 					return false;
 				case "URL":
@@ -361,9 +366,8 @@ sidebar_app.WorkspaceMenuInjector = class {
 
 		// Check for regular workspace
 		const workspace_slug = frappe.router.slug(item.title);
-		const result = currentPath === `/app/${workspace_slug}` ||
-		               currentPath === `/app/private/${workspace_slug}`;
-		return result;
+		return currentPath === `/app/${workspace_slug}` ||
+		       currentPath === `/app/private/${workspace_slug}`;
 	}
 
 	attach_click_handlers($section) {
