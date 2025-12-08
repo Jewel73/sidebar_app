@@ -84,7 +84,7 @@ sidebar_app.WorkspaceMenuInjector = class {
 			callback: (r) => {
 				if (r.message && r.message.pages) {
 					// Filter only public pages
-					this.workspace_items = r.message.pages.filter(p => p.public);
+					this.workspace_items = r.message.pages.filter(p => p.public && p.is_hidden !== 1);
 					this.workspace_items_loaded = true;
 				}
 			}
