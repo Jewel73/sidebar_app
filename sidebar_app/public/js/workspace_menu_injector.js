@@ -66,10 +66,11 @@ sidebar_app.WorkspaceMenuInjector = class {
 			console.error("Could not find frappe.views.BaseList");
 		}
 
-		// Listen to form-refresh event (fired after sidebar is created)
-		$(document).on("form-refresh", (e, frm) => {
-			this.inject_into_form_sidebar(frm);
-		});
+		// [MODIFIED] Disabled injection in Form views as requested
+		// To re-enable, simply uncomment the 3 lines below:
+		// $(document).on("form-refresh", (e, frm) => {
+		// 	this.inject_into_form_sidebar(frm);
+		// });
 	}
 
 
