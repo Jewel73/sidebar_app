@@ -12,14 +12,8 @@ sidebar_app.WorkspaceMenuInjector = class {
 	}
 
 	init() {
-		
-		// Setup event listeners IMMEDIATELY (before loading items)
-		// This ensures the override happens before any ListView is created
-		this.setup_event_listeners();
-		
-		// Load workspace items in parallel
-		this.load_workspace_items().then(() => {
-		});
+		// [Option A] Sidebar menu injection into List/Form sidebars is disabled to prevent duplicate sidebars
+		// this.setup_event_listeners();
 	}
 
 	setup_event_listeners() {
